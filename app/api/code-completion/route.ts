@@ -117,9 +117,9 @@ Framework: ${context.framework}
 Context:
 ${context.beforeContext}
 ${context.currentLine.substring(
-  0,
-  context.cursorPosition.column
-)}|CURSOR|${context.currentLine.substring(context.cursorPosition.column)}
+    0,
+    context.cursorPosition.column
+  )}|CURSOR|${context.currentLine.substring(context.cursorPosition.column)}
 ${context.afterContext}
 
 Analysis:
@@ -137,7 +137,7 @@ Instructions:
 Generate suggestion:`;
 }
 
-async function generateSuggestion(prompt: string): Promise<string> {
+async function generateSuggestion(prompt: string): Promise<string | null> {
   try {
     const response = await fetch("http://localhost:11434/api/generate", {
       method: "POST",
@@ -153,23 +153,23 @@ async function generateSuggestion(prompt: string): Promise<string> {
       }),
     });
 
-       if (!response.ok) {
+    if (!response.ok) {
       throw new Error(`AI service error: ${response.statusText}`)
     }
 
-      const data = await response.json()
+    const data = await response.json()
     let suggestion = data.response
 
-     // Clean up the suggestion
+    // Clean up the suggestion
     if (suggestion.includes("```")) {
       const codeMatch = suggestion.match(/```[\w]*\n?([\s\S]*?)```/)
       suggestion = codeMatch ? codeMatch[1].trim() : suggestion
     }
 
-    return suggestion
+    return suggestion || null
   } catch (error) {
-      console.error("AI generation error:", error)
-    return "// AI suggestion unavailable"
+    console.error("AI generation error:", error)
+    return null
   }
 }
 
