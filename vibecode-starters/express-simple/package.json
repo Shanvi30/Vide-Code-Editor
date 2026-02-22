@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "dev": "node --watch index.js",
     "start": "node --watch index.js"
   },
   "dependencies": {

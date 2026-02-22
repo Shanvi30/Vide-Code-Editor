@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-
 interface CodeSuggestionRequest {
   fileContent: string;
   cursorLine: number;
@@ -25,15 +24,13 @@ interface CodeContext {
 export async function POST(request: NextRequest) {
   try {
     const body: CodeSuggestionRequest = await request.json();
-
     const { fileContent, cursorLine, cursorColumn, suggestionType, fileName } =
       body;
 
-    // Validate input
     if (!fileContent || cursorLine < 0 || cursorColumn < 0 || !suggestionType) {
       return NextResponse.json(
         { error: "Invalid input parameters" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -41,11 +38,9 @@ export async function POST(request: NextRequest) {
       fileContent,
       cursorLine,
       cursorColumn,
-      fileName
+      fileName,
     );
-
-    const prompt = buildPrompt(context, suggestionType);
-
+    const prompt = buildPrompt(context);
     const suggestion = await generateSuggestion(prompt);
 
     return NextResponse.json({
@@ -59,10 +54,10 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error("Context analysis error:", error);
+    console.error("Code completion error:", error);
     return NextResponse.json(
       { error: "Internal server error", message: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -71,24 +66,17 @@ function analyzeCodeContext(
   content: string,
   line: number,
   column: number,
-  fileName?: string
+  fileName?: string,
 ): CodeContext {
   const lines = content.split("\n");
   const currentLine = lines[line] || "";
-
-  // Get surrounding context (10 lines before and after)
   const contextRadius = 10;
   const startLine = Math.max(0, line - contextRadius);
   const endLine = Math.min(lines.length, line + contextRadius);
-
   const beforeContext = lines.slice(startLine, line).join("\n");
   const afterContext = lines.slice(line + 1, endLine).join("\n");
-
-  // Detect language and framework
   const language = detectLanguage(content, fileName);
   const framework = detectFramework(content);
-
-  // Analyze code patterns
   const isInFunction = detectInFunction(lines, line);
   const isInClass = detectInClass(lines, line);
   const isAfterComment = detectAfterComment(currentLine, column);
@@ -108,72 +96,76 @@ function analyzeCodeContext(
   };
 }
 
-function buildPrompt(context: CodeContext, suggestionType: string): string {
-  return `You are an expert code completion assistant. Generate a ${suggestionType} suggestion.
+function buildPrompt(context: CodeContext): string {
+  return `You are a strict code completion engine.
+
+Return ONLY the raw code that should be inserted at the cursor position.
+DO NOT explain anything.
+DO NOT add markdown or backticks.
+DO NOT describe what you are doing.
+ONLY output pure, raw code to be inserted.
 
 Language: ${context.language}
 Framework: ${context.framework}
 
-Context:
+Code before cursor:
 ${context.beforeContext}
-${context.currentLine.substring(
-    0,
-    context.cursorPosition.column
-  )}|CURSOR|${context.currentLine.substring(context.cursorPosition.column)}
+${context.currentLine.substring(0, context.cursorPosition.column)}
+
+Code after cursor:
+${context.currentLine.substring(context.cursorPosition.column)}
 ${context.afterContext}
 
-Analysis:
-- In Function: ${context.isInFunction}
-- In Class: ${context.isInClass}
-- After Comment: ${context.isAfterComment}
-- Incomplete Patterns: ${context.incompletePatterns.join(", ") || "None"}
-
-Instructions:
-1. Provide only the code that should be inserted at the cursor
-2. Maintain proper indentation and style
-3. Follow ${context.language} best practices
-4. Make the suggestion contextually appropriate
-
-Generate suggestion:`;
+Complete the code exactly at the cursor position. Output only the completion text:`;
 }
 
-async function generateSuggestion(prompt: string): Promise<string | null> {
+async function generateSuggestion(prompt: string): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY;
+
+  if (!apiKey) {
+    console.error("GROQ_API_KEY is not set");
+    return "// AI suggestion unavailable";
+  }
+
   try {
-    const response = await fetch("http://localhost:11434/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "codellama:latest",
-        prompt,
-        stream: false,
-        option: {
-          temperature: 0.7,
-          max_tokens: 300,
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
         },
-      }),
-    });
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 300,
+          temperature: 0.2,
+        }),
+      },
+    );
 
     if (!response.ok) {
-      throw new Error(`AI service error: ${response.statusText}`)
+      throw new Error(`Groq API error: ${response.statusText}`);
     }
 
-    const data = await response.json()
-    let suggestion = data.response
+    const data = await response.json();
+    let suggestion =
+      data.choices[0].message.content || "// No suggestion generated";
 
-    // Clean up the suggestion
     if (suggestion.includes("```")) {
-      const codeMatch = suggestion.match(/```[\w]*\n?([\s\S]*?)```/)
-      suggestion = codeMatch ? codeMatch[1].trim() : suggestion
+      const codeMatch = suggestion.match(/```[\w]*\n?([\s\S]*?)```/);
+      suggestion = codeMatch ? codeMatch[1].trim() : suggestion;
     }
 
-    return suggestion || null
+    suggestion = suggestion.replace(/^return\s+/, "");
+    return suggestion.trim();
   } catch (error) {
-    console.error("AI generation error:", error)
-    return null
+    console.error("Groq completion error:", error);
+    return "// AI suggestion unavailable";
   }
 }
 
-// Helper functions for code analysis
 function detectLanguage(content: string, fileName?: string): string {
   if (fileName) {
     const ext = fileName.split(".").pop()?.toLowerCase();
@@ -187,16 +179,15 @@ function detectLanguage(content: string, fileName?: string): string {
       go: "Go",
       rs: "Rust",
       php: "PHP",
+      css: "CSS",
+      html: "HTML",
     };
     if (ext && extMap[ext]) return extMap[ext];
   }
-
-  // Content-based detection
   if (content.includes("interface ") || content.includes(": string"))
     return "TypeScript";
-  if (content.includes("def ") || content.includes("import ")) return "Python";
+  if (content.includes("def ") && content.includes("import ")) return "Python";
   if (content.includes("func ") || content.includes("package ")) return "Go";
-
   return "JavaScript";
 }
 
@@ -209,7 +200,6 @@ function detectFramework(content: string): string {
     return "Angular";
   if (content.includes("next/") || content.includes("getServerSideProps"))
     return "Next.js";
-
   return "None";
 }
 
@@ -239,7 +229,6 @@ function detectAfterComment(line: string, column: number): boolean {
 function detectIncompletePatterns(line: string, column: number): string[] {
   const beforeCursor = line.substring(0, column);
   const patterns: string[] = [];
-
   if (/^\s*(if|while|for)\s*\($/.test(beforeCursor.trim()))
     patterns.push("conditional");
   if (/^\s*(function|def)\s*$/.test(beforeCursor.trim()))
@@ -248,6 +237,5 @@ function detectIncompletePatterns(line: string, column: number): string[] {
   if (/\[\s*$/.test(beforeCursor)) patterns.push("array");
   if (/=\s*$/.test(beforeCursor)) patterns.push("assignment");
   if (/\.\s*$/.test(beforeCursor)) patterns.push("method-call");
-
   return patterns;
 }

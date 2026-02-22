@@ -471,18 +471,7 @@ export const PlaygroundEditor = ({
         }
       }
 
-      // Trigger new suggestion if appropriate (simplified)
-      if (!currentSuggestionRef.current && !suggestionLoading) {
-        // Clear any existing timeout
-        if (suggestionTimeoutRef.current) {
-          clearTimeout(suggestionTimeoutRef.current);
-        }
-
-        // Trigger suggestion with a delay
-        suggestionTimeoutRef.current = setTimeout(() => {
-          onTriggerSuggestion("completion", editor);
-        }, 300);
-      }
+      // Don't auto-trigger on cursor move — only trigger on typing
     });
 
     // Listen for content changes to detect manual typing over suggestions
@@ -516,17 +505,12 @@ export const PlaygroundEditor = ({
         const change = e.changes[0];
 
         // Trigger suggestions after specific characters
-        if (
-          change.text === "\n" || // New line
-          change.text === "{" || // Opening brace
-          change.text === "." || // Dot notation
-          change.text === "=" || // Assignment
-          change.text === "(" || // Function call
-          change.text === "," || // Parameter separator
-          change.text === ":" || // Object property
-          change.text === ";" // Statement end
-        ) {
-          setTimeout(() => {
+        // Only trigger AI on new line — reduces API calls drastically
+        if (change.text === "\n") {
+          if (suggestionTimeoutRef.current) {
+            clearTimeout(suggestionTimeoutRef.current);
+          }
+          suggestionTimeoutRef.current = setTimeout(() => {
             if (
               editorRef.current &&
               !currentSuggestionRef.current &&
@@ -534,7 +518,7 @@ export const PlaygroundEditor = ({
             ) {
               onTriggerSuggestion("completion", editor);
             }
-          }, 100); // Small delay to let the change settle
+          }, 2000);
         }
       }
     });

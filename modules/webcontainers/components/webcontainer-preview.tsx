@@ -151,8 +151,12 @@ const WebContainerPreview = ({
           );
         }
 
-        const installProcess = await instance.spawn("npm", ["install"]);
-
+        const installProcess = await instance.spawn("npm", [
+          "install",
+          "--prefer-offline",
+          "--no-audit",
+          "--no-fund",
+        ]);
         installProcess.output.pipeTo(
           new WritableStream({
             write(data) {
@@ -192,7 +196,7 @@ const WebContainerPreview = ({
           );
         }
 
-        const startProcess = await instance.spawn("npm", ["run", "dev"]);
+        const startProcess = await instance.spawn("npm", ["run", "start"]);
         instance.on("server-ready", (port: number, url: string) => {
           if (terminalRef.current?.writeToTerminal) {
             terminalRef.current.writeToTerminal(
