@@ -43,6 +43,7 @@ import {
   Save,
   Settings,
   X,
+  Code2,
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import React, {
@@ -307,23 +308,27 @@ const MainPlaygroundPage = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
-        <div className="w-full max-w-md p-6 rounded-lg shadow-sm border">
-          <h2 className="text-xl font-semibold mb-6 text-center">
-            Loading Playground
-          </h2>
-          <div className="mb-8">
-            <LoadingStep
-              currentStep={1}
-              step={1}
-              label="Loading playground data"
-            />
-            <LoadingStep
-              currentStep={2}
-              step={2}
-              label="Setting up environment"
-            />
-            <LoadingStep currentStep={3} step={3} label="Ready to code" />
+      <div className="fixed inset-0 bg-[#07080f] flex items-center justify-center z-50">
+        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-indigo-600/8 blur-[120px]" />
+        <div className="relative flex flex-col items-center gap-8 w-full max-w-xs px-6">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 rounded-full border border-indigo-500/15" />
+            <div className="absolute inset-0 rounded-full border-t-2 border-indigo-400 animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Code2 className="w-6 h-6 text-indigo-400" />
+            </div>
+          </div>
+          <div className="text-center">
+            <h2 className="text-sm font-semibold text-white tracking-tight">Setting up environment</h2>
+            <p className="text-xs text-zinc-500 mt-1.5">Preparing your playground...</p>
+          </div>
+          <div className="w-full h-px rounded-full bg-white/5 overflow-hidden">
+            <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" style={{width: "60%"}} />
+          </div>
+          <div className="flex flex-col gap-3 w-full">
+            <LoadingStep currentStep={2} step={1} label="Loading playground data" />
+            <LoadingStep currentStep={1} step={2} label="Setting up environment" />
+            <LoadingStep currentStep={0} step={3} label="Ready to code" />
           </div>
         </div>
       </div>

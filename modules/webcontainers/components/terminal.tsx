@@ -132,20 +132,6 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
       }
     }, []);
 
-    // ── Exposed ref methods ───────────────────────────────────────────────────
-
-    useImperativeHandle(ref, () => ({
-      writeToTerminal: (data: string) => {
-        term.current?.write(data);
-      },
-      clearTerminal: () => {
-        clearTerminalDisplay();
-      },
-      focusTerminal: () => {
-        term.current?.focus();
-      },
-    }));
-
     // ── Command execution ─────────────────────────────────────────────────────
 
     const executeCommand = useCallback(
@@ -320,6 +306,18 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
       }
     }, [writePrompt]);
 
+    useImperativeHandle(ref, () => ({
+      writeToTerminal: (data: string) => {
+        term.current?.write(data);
+      },
+      clearTerminal: () => {
+        clearTerminalDisplay();
+      },
+      focusTerminal: () => {
+        term.current?.focus();
+      },
+    }));
+
     const copyTerminalContent = useCallback(async () => {
       const content = term.current?.getSelection();
       if (content) {
@@ -399,14 +397,26 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
         term.current = terminal;
 
         terminal.onData(handleTerminalInput);
-        setTimeout(() => fitAddonInstance.fit(), 100);
+        setTimeout(() => {
+          try {
+            fitAddonInstance.fit();
+          } catch {
+            /* not yet visible */
+          }
+        }, 200);
 
         terminal.writeln("🚀 WebContainer Terminal");
         terminal.writeln("Type a command and press Enter");
         writePrompt();
 
         resizeObserver = new ResizeObserver(() => {
-          setTimeout(() => fitAddon.current?.fit(), 100);
+          setTimeout(() => {
+            try {
+              fitAddon.current?.fit();
+            } catch {
+              /* not yet visible */
+            }
+          }, 200);
         });
         resizeObserver.observe(terminalRef.current!);
       })();
@@ -424,9 +434,15 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
     }, []);
 
     useEffect(() => {
-      if (webContainerInstance && term.current && !isConnected) {
-        connectToWebContainer();
-      }
+      if (!webContainerInstance || isConnected) return;
+      // Poll until xterm is ready (async load)
+      const interval = setInterval(() => {
+        if (term.current) {
+          clearInterval(interval);
+          connectToWebContainer();
+        }
+      }, 100);
+      return () => clearInterval(interval);
     }, [webContainerInstance, connectToWebContainer, isConnected]);
 
     // ── Render ────────────────────────────────────────────────────────────────
