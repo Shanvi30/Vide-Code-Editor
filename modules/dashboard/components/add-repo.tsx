@@ -1,44 +1,41 @@
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { ArrowDown } from "lucide-react"
-import Image from "next/image"
+import { Github, ArrowUpRight } from "lucide-react";
 
 const AddRepo = () => {
   return (
-    <div
-      className="group px-6 py-6 flex flex-row justify-between items-center border rounded-lg bg-muted cursor-pointer 
-      transition-all duration-300 ease-in-out
-      hover:bg-background hover:border-[#E93F3F] hover:scale-[1.02]
-      shadow-[0_2px_10px_rgba(0,0,0,0.08)]
-      hover:shadow-[0_10px_30px_rgba(233,63,63,0.15)]"
-    >
-      <div className="flex flex-row justify-center items-start gap-4">
-        <Button
-          variant={"outline"}
-          className="flex justify-center items-center bg-white group-hover:bg-[#fff8f8] group-hover:border-[#E93F3F] group-hover:text-[#E93F3F] transition-colors duration-300"
-          size={"icon"}
-        >
-          <ArrowDown size={30} className="transition-transform duration-300 group-hover:translate-y-1" />
-        </Button>
-        <div className="flex flex-col">
-          <h1 className="text-xl font-bold text-[#e93f3f]">Open Github Repository</h1>
-          <p className="text-sm text-muted-foreground max-w-[220px]">Work with your repositories in our editor</p>
+    <div className="group relative cursor-pointer rounded-2xl border border-white/8 bg-white/[0.03] hover:bg-violet-500/5 hover:border-violet-500/20 transition-all duration-200 overflow-hidden p-6">
+      {/* Glow on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(ellipse_at_top_left,rgba(139,92,246,0.08),transparent_60%)]" />
+
+      <div className="relative flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          {/* Icon */}
+          <div className="w-11 h-11 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center group-hover:bg-violet-500/20 transition-colors">
+            <Github className="w-5 h-5 text-violet-400" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-white">Open Repository</h2>
+            <p className="text-sm text-zinc-500 mt-0.5">Import from GitHub</p>
+          </div>
+        </div>
+
+        {/* Arrow */}
+        <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center opacity-40 group-hover:opacity-70 transition-opacity">
+          <ArrowUpRight className="w-4 h-4 text-violet-400 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </div>
       </div>
 
-      <div className="relative overflow-hidden">
-        <Image
-          src={"/github.svg"}
-          alt="Open GitHub repository"
-          width={150}
-          height={150}
-          className="transition-transform duration-300 group-hover:scale-110"
-        />
+      {/* Info row */}
+      <div className="relative flex items-center gap-3 mt-5">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/5 group-hover:border-violet-500/15 transition-colors">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span className="text-xs text-zinc-500">OAuth connected</span>
+        </div>
+        <span className="text-xs text-zinc-600">Public & private repos</span>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AddRepo
-
-
+export default AddRepo;

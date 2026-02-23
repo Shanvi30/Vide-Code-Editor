@@ -1,17 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import type { Project } from "../types";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,7 +40,6 @@ import {
   Trash2,
   ExternalLink,
   Copy,
-  Download,
   Eye,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -59,34 +49,59 @@ interface ProjectTableProps {
   projects: Project[];
   onUpdateProject?: (
     id: string,
-    data: { title: string; description: string }
+    data: { title: string; description: string },
   ) => Promise<void>;
   onDeleteProject?: (id: string) => Promise<void>;
   onDuplicateProject?: (id: string) => Promise<void>;
-  
 }
 
-interface EditProjectData {
-  title: string;
-  description: string;
-}
+const templateColors: Record<
+  string,
+  { text: string; bg: string; border: string }
+> = {
+  REACT: {
+    text: "text-sky-400",
+    bg: "bg-sky-500/10",
+    border: "border-sky-500/20",
+  },
+  NEXTJS: {
+    text: "text-zinc-300",
+    bg: "bg-zinc-500/10",
+    border: "border-zinc-500/20",
+  },
+  EXPRESS: {
+    text: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+  },
+  VUE: {
+    text: "text-green-400",
+    bg: "bg-green-500/10",
+    border: "border-green-500/20",
+  },
+  HONO: {
+    text: "text-orange-400",
+    bg: "bg-orange-500/10",
+    border: "border-orange-500/20",
+  },
+  ANGULAR: {
+    text: "text-rose-400",
+    bg: "bg-rose-500/10",
+    border: "border-rose-500/20",
+  },
+};
 
 export default function ProjectTable({
   projects,
   onUpdateProject,
   onDeleteProject,
   onDuplicateProject,
-
 }: ProjectTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [editData, setEditData] = useState<EditProjectData>({
-    title: "",
-    description: "",
-  });
+  const [editData, setEditData] = useState({ title: "", description: "" });
   const [isLoading, setIsLoading] = useState(false);
- 
 
   const handleEditClick = (project: Project) => {
     setSelectedProject(project);
@@ -97,45 +112,34 @@ export default function ProjectTable({
     setEditDialogOpen(true);
   };
 
-  const handleDeleteClick = async (project: Project) => {
+  const handleDeleteClick = (project: Project) => {
     setSelectedProject(project);
-
     setDeleteDialogOpen(true);
   };
 
   const handleUpdateProject = async () => {
     if (!selectedProject || !onUpdateProject) return;
-
     setIsLoading(true);
-
     try {
       await onUpdateProject(selectedProject.id, editData);
       setEditDialogOpen(false);
       toast.success("Project updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update project");
-      console.error("Error updating project:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleMarkasFavorite = async (project: Project) => {
-    //    Write your logic here
-  };
-
   const handleDeleteProject = async () => {
     if (!selectedProject || !onDeleteProject) return;
-
     setIsLoading(true);
     try {
       await onDeleteProject(selectedProject.id);
       setDeleteDialogOpen(false);
-      setSelectedProject(null);
       toast.success("Project deleted successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete project");
-      console.error("Error deleting project:", error);
     } finally {
       setIsLoading(false);
     }
@@ -143,199 +147,212 @@ export default function ProjectTable({
 
   const handleDuplicateProject = async (project: Project) => {
     if (!onDuplicateProject) return;
-
     setIsLoading(true);
     try {
       await onDuplicateProject(project.id);
       toast.success("Project duplicated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to duplicate project");
-      console.error("Error duplicating project:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const copyProjectUrl = (projectId: string) => {
-    const url = `${window.location.origin}/playground/${projectId}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Project url copied to clipboard");
+    navigator.clipboard.writeText(
+      `${window.location.origin}/playground/${projectId}`,
+    );
+    toast.success("URL copied to clipboard");
   };
 
   return (
     <>
-      <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Project</TableHead>
-              <TableHead>Template</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead className="w-[50px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {projects.map((project) => (
-              <TableRow key={project.id}>
-                <TableCell className="font-medium">
-                  <div className="flex flex-col">
-                    <Link
-                      href={`/playground/${project.id}`}
-                      className="hover:underline"
-                    >
-                      <span className="font-semibold">{project.title}</span>
-                    </Link>
-                    <span className="text-sm text-gray-500 line-clamp-1">
-                      {project.description}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="outline"
-                    className="bg-[#E93F3F15] text-[#E93F3F] border-[#E93F3F]"
+      <div className="w-full rounded-2xl border border-white/8 overflow-hidden bg-white/[0.02]">
+        {/* Table header */}
+        <div className="grid grid-cols-[1fr_100px_120px_160px_48px] gap-4 px-5 py-3 border-b border-white/5 bg-white/[0.02]">
+          {["Project", "Template", "Created", "User", ""].map((h, i) => (
+            <div
+              key={i}
+              className="text-xs font-semibold text-zinc-500 uppercase tracking-widest"
+            >
+              {h}
+            </div>
+          ))}
+        </div>
+
+        {/* Rows */}
+        <div className="divide-y divide-white/5">
+          {projects.map((project) => {
+            const tc = templateColors[project.template] || templateColors.REACT;
+            return (
+              <div
+                key={project.id}
+                className="grid grid-cols-[1fr_100px_120px_160px_48px] gap-4 items-center px-5 py-4 hover:bg-white/[0.02] transition-colors group"
+              >
+                {/* Project name */}
+                <div className="flex flex-col min-w-0">
+                  <Link
+                    href={`/playground/${project.id}`}
+                    className="text-sm font-semibold text-white hover:text-indigo-400 transition-colors truncate"
+                  >
+                    {project.title}
+                  </Link>
+                  <span className="text-xs text-zinc-500 truncate mt-0.5">
+                    {project.description}
+                  </span>
+                </div>
+
+                {/* Template badge */}
+                <div>
+                  <span
+                    className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold border ${tc.text} ${tc.bg} ${tc.border}`}
                   >
                     {project.template}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm text-gray-500">
-                    {format(new Date(project.createdAt), "MMM dd, yyyy")}
                   </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full overflow-hidden">
-                      <Image
-                        src={project.user.image || "/placeholder.svg"}
-                        alt={project.user.name}
-                        width={32}
-                        height={32}
-                        className="object-cover"
-                      />
-                    </div>
-                    <span className="text-sm">{project.user.name}</span>
+                </div>
+
+                {/* Date */}
+                <div className="text-xs text-zinc-500">
+                  {format(new Date(project.createdAt), "MMM dd, yyyy")}
+                </div>
+
+                {/* User */}
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 rounded-full overflow-hidden ring-1 ring-white/10 shrink-0">
+                    <Image
+                      src={project.user.image || "/placeholder.svg"}
+                      alt={project.user.name}
+                      width={28}
+                      height={28}
+                      className="object-cover"
+                    />
                   </div>
-                </TableCell>
-                <TableCell>
+                  <span className="text-xs text-zinc-400 truncate">
+                    {project.user.name}
+                  </span>
+                </div>
+
+                {/* Actions */}
+                <div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-zinc-600 hover:text-white hover:bg-white/5 opacity-0 group-hover:opacity-100 transition-all"
+                      >
                         <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-48 bg-[#0d0e1a] border-white/10"
+                    >
                       <DropdownMenuItem asChild>
-                        <MarkedToggleButton markedForRevision={project.Starmark[0]?.isMarked} id={project.id} />
+                        <MarkedToggleButton
+                          markedForRevision={project.Starmark[0]?.isMarked}
+                          id={project.id}
+                        />
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link
                           href={`/playground/${project.id}`}
-                          className="flex items-center"
+                          className="flex items-center gap-2 text-zinc-300"
                         >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Open Project
+                          <Eye className="h-4 w-4" /> Open Project
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link
                           href={`/playground/${project.id}`}
                           target="_blank"
-                          className="flex items-center"
+                          className="flex items-center gap-2 text-zinc-300"
                         >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Open in New Tab
+                          <ExternalLink className="h-4 w-4" /> Open in New Tab
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      <DropdownMenuSeparator className="bg-white/5" />
                       <DropdownMenuItem
                         onClick={() => handleEditClick(project)}
+                        className="gap-2 text-zinc-300"
                       >
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        Edit Project
+                        <Edit3 className="h-4 w-4" /> Edit Project
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleDuplicateProject(project)}
+                        className="gap-2 text-zinc-300"
                       >
-                        <Copy className="h-4 w-4 mr-2" />
-                        Duplicate
+                        <Copy className="h-4 w-4" /> Duplicate
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => copyProjectUrl(project.id)}
+                        className="gap-2 text-zinc-300"
                       >
-                        <Download className="h-4 w-4 mr-2" />
-                        Copy URL
+                        <Copy className="h-4 w-4" /> Copy URL
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      <DropdownMenuSeparator className="bg-white/5" />
                       <DropdownMenuItem
                         onClick={() => handleDeleteClick(project)}
-                        className="text-destructive focus:text-destructive"
+                        className="gap-2 text-rose-400 focus:text-rose-400"
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Project
+                        <Trash2 className="h-4 w-4" /> Delete Project
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Edit Project Dialog */}
+      {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="bg-[#0d0e1a] border-white/10 text-white">
           <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
-            <DialogDescription>
-              Make changes to your project details here. Click save when you're
-              done.
+            <DialogTitle className="text-white">Edit Project</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Update your project details below.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="title">Project Title</Label>
+              <Label className="text-zinc-300">Project Title</Label>
               <Input
-                id="title"
                 value={editData.title}
                 onChange={(e) =>
-                  setEditData((prev) => ({ ...prev, title: e.target.value }))
+                  setEditData((p) => ({ ...p, title: e.target.value }))
                 }
+                className="bg-white/5 border-white/10 text-white placeholder:text-zinc-600"
                 placeholder="Enter project title"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label className="text-zinc-300">Description</Label>
               <Textarea
-                id="description"
                 value={editData.description}
                 onChange={(e) =>
-                  setEditData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
+                  setEditData((p) => ({ ...p, description: e.target.value }))
                 }
-                placeholder="Enter project description"
+                className="bg-white/5 border-white/10 text-white placeholder:text-zinc-600"
+                placeholder="Enter description"
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
             <Button
-              type="button"
               variant="outline"
               onClick={() => setEditDialogOpen(false)}
               disabled={isLoading}
+              className="border-white/10 text-zinc-300 hover:text-white hover:bg-white/5"
             >
               Cancel
             </Button>
             <Button
-              type="button"
               onClick={handleUpdateProject}
               disabled={isLoading || !editData.title.trim()}
+              className="bg-indigo-500 hover:bg-indigo-400 text-white"
             >
               {isLoading ? "Saving..." : "Save Changes"}
             </Button>
@@ -343,23 +360,29 @@ export default function ProjectTable({
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#0d0e1a] border-white/10 text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Project</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{selectedProject?.title}"? This
-              action cannot be undone. All files and data associated with this
-              project will be permanently removed.
+            <AlertDialogTitle className="text-white">
+              Delete Project
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete &quot;{selectedProject?.title}
+              &quot;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isLoading}
+              className="border-white/10 text-zinc-300 hover:text-white bg-transparent hover:bg-white/5"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteProject}
               disabled={isLoading}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-rose-500 hover:bg-rose-400 text-white border-0"
             >
               {isLoading ? "Deleting..." : "Delete Project"}
             </AlertDialogAction>

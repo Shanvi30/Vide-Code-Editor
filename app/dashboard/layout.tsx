@@ -7,10 +7,9 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const playgroundData = await getAllPlaygroundForUser();
 
-    const playgroundData = await getAllPlaygroundForUser();
-
-    console.log("playgroundData", playgroundData);
+  console.log("playgroundData", playgroundData);
 
   const technologyIconMap: Record<string, string> = {
     REACT: "Zap",
@@ -19,27 +18,24 @@ export default async function DashboardLayout({
     VUE: "Compass",
     HONO: "FlameIcon",
     ANGULAR: "Terminal",
-  }
+  };
 
-  const formattedPlaygroundData = playgroundData?.map((item)=>({
-    id:item.id,
-    name:item.title,
-    starred:item.Starmark?.[0]?.isMarked || false,
-    icon:technologyIconMap[item.template] || "Code2"
-  }))
-
+  const formattedPlaygroundData = playgroundData?.map((item) => ({
+    id: item.id,
+    name: item.title,
+    starred: item.Starmark?.[0]?.isMarked || false,
+    icon: technologyIconMap[item.template] || "Code2",
+  }));
 
   return (
-
-  <SidebarProvider>
-    
-    <div className="flex min-h-screen w-full overflow-x-hidden">
-      {/* Dashboard Sidebar */}
-      {/* @ts-ignore */}
-      <DashboardSidebar initialPlaygroundData={formattedPlaygroundData}/>
-      <main className="flex-1">{children}</main>
-    </div>
-  </SidebarProvider>
-  )
-
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full overflow-x-hidden bg-[#07080f]">
+        {" "}
+        {/* Dashboard Sidebar */}
+        {/* @ts-ignore */}
+        <DashboardSidebar initialPlaygroundData={formattedPlaygroundData} />
+        <main className="flex-1">{children}</main>
+      </div>
+    </SidebarProvider>
+  );
 }
