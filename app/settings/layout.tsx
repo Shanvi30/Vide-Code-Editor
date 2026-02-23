@@ -2,14 +2,12 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { getAllPlaygroundForUser } from "@/modules/dashboard/actions";
 import { DashboardSidebar } from "@/modules/dashboard/components/dashboard-sidebar";
 
-export default async function DashboardLayout({
+export default async function SettingsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const playgroundData = await getAllPlaygroundForUser();
-
-  console.log("playgroundData", playgroundData);
 
   const technologyIconMap: Record<string, string> = {
     REACT: "Zap",
@@ -30,8 +28,6 @@ export default async function DashboardLayout({
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full overflow-hidden bg-[#07080f]">
-        {" "}
-        {/* Dashboard Sidebar */}
         {/* @ts-ignore */}
         <DashboardSidebar initialPlaygroundData={formattedPlaygroundData} />
         <main className="flex-1 h-screen overflow-y-auto">{children}</main>

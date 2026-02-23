@@ -14,8 +14,8 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Apply to all routes
-        source: '/:path*',
+        // WebContainer needs these headers — only apply to playground
+        source: '/playground/:path*',
         headers: [
           {
             key: 'Cross-Origin-Opener-Policy',
@@ -23,13 +23,15 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
+            value: 'credentialless',
           },
         ],
       },
+      // NOTE: /api/auth/* must NOT have COOP/COEP headers at all
+      // Adding them breaks signOut(), signIn() and session fetching
     ];
   },
-  reactStrictMode:false
+  reactStrictMode: false
 };
 
 export default nextConfig;
