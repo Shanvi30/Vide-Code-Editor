@@ -10,7 +10,7 @@ app.get("/", (req, res) => {
     <html>
       <body style="font-family:sans-serif; padding:2rem; text-align:center">
         <h1>🚂 Express.js Server</h1>
-        <p>Server is running! Start editing <code>index.js</code></p>
+        <p>Server is running! Start Coding</p>
         <a href="/api">Try /api endpoint</a>
       </body>
     </html>

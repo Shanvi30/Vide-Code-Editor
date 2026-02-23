@@ -1,21 +1,21 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  images:{
-    remotePatterns:[
+  images: {
+    remotePatterns: [
       {
-        protocol:"https",
-        hostname:"*",
-        port:'',
-        pathname:"/**"
+        protocol: "https",
+        hostname: "*",
+        port: '',
+        pathname: "/**"
       }
     ]
   },
   async headers() {
     return [
       {
-        // WebContainer needs these headers — only apply to playground
-        source: '/playground/:path*',
+        // Apply to all routes EXCEPT /api/auth/*
+        source: '/((?!api/auth).*)',
         headers: [
           {
             key: 'Cross-Origin-Opener-Policy',

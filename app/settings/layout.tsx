@@ -18,7 +18,7 @@ export default async function SettingsLayout({
     ANGULAR: "Terminal",
   };
 
-  const formattedPlaygroundData = playgroundData?.map((item) => ({
+  const formattedPlaygroundData = (playgroundData ?? []).map((item: { id: any; title: any; Starmark: { isMarked: any; }[]; template: string | number; }) => ({
     id: item.id,
     name: item.title,
     starred: item.Starmark?.[0]?.isMarked || false,
@@ -29,7 +29,9 @@ export default async function SettingsLayout({
     <SidebarProvider>
       <div className="flex h-screen w-full overflow-hidden bg-[#07080f]">
         {/* @ts-ignore */}
-        <DashboardSidebar initialPlaygroundData={formattedPlaygroundData} />
+        <DashboardSidebar
+          initialPlaygroundData={formattedPlaygroundData ?? []}
+        />
         <main className="flex-1 h-screen overflow-y-auto">{children}</main>
       </div>
     </SidebarProvider>

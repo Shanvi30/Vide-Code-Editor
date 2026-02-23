@@ -20,12 +20,13 @@ export default async function DashboardLayout({
     ANGULAR: "Terminal",
   };
 
-  const formattedPlaygroundData = playgroundData?.map((item) => ({
-    id: item.id,
-    name: item.title,
-    starred: item.Starmark?.[0]?.isMarked || false,
-    icon: technologyIconMap[item.template] || "Code2",
-  }));
+  const formattedPlaygroundData =
+    (playgroundData ?? []).map((item) => ({
+      id: item.id,
+      name: item.title,
+      starred: item.Starmark?.[0]?.isMarked || false,
+      icon: technologyIconMap[item.template] || "Code2",
+    })) ?? [];
 
   return (
     <SidebarProvider>
@@ -33,7 +34,9 @@ export default async function DashboardLayout({
         {" "}
         {/* Dashboard Sidebar */}
         {/* @ts-ignore */}
-        <DashboardSidebar initialPlaygroundData={formattedPlaygroundData} />
+        <DashboardSidebar
+          initialPlaygroundData={formattedPlaygroundData ?? []}
+        />
         <main className="flex-1 h-screen overflow-y-auto">{children}</main>
       </div>
     </SidebarProvider>
