@@ -1,16 +1,11 @@
+"use client";
+
 import React from "react";
-import { Chrome, Github, Zap } from "lucide-react";
-import { signIn } from "@/auth";
-
-async function handleGoogleSignIn() {
-  "use server";
-  await signIn("google");
-}
-
-async function handleGithubSignIn() {
-  "use server";
-  await signIn("github");
-}
+import { Github, Zap } from "lucide-react";
+import {
+  handleGoogleSignIn,
+  handleGithubSignIn,
+} from "@/modules/auth/actions/sign-in-actions";
 
 const SignInFormClient = () => {
   return (
