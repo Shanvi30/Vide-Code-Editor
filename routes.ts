@@ -1,5 +1,5 @@
 export const publicRoutes: string[] = [
-    "/",   // Homepage must be public so SessionProvider can fetch without redirect loop
+    "/",
 ]
 
 export const protectedRoutes: string[] = [
