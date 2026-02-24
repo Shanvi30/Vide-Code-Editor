@@ -1,0 +1,35 @@
+{
+  "folderName": "vue",
+  "items": [
+    {
+      "filename": "index",
+      "fileExtension": "html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Vue App</title>\n  </head>\n  <body>\n    <div id=\"app\"></div>\n    <script type=\"module\" src=\"/src/main.ts\"></script>\n  </body>\n</html>\n"
+    },
+    {
+      "filename": "package",
+      "fileExtension": "json",
+      "content": "{\n  \"name\": \"vue-ts-template\",\n  \"private\": true,\n  \"version\": \"0.0.1\",\n  \"type\": \"module\",\n  \"scripts\": {\n    \"start\": \"vite --host --port 3000\"\n  },\n  \"dependencies\": {\n    \"vue\": \"^3.4.0\"\n  },\n  \"devDependencies\": {\n    \"@vitejs/plugin-vue\": \"^5.0.0\",\n    \"typescript\": \"^5.0.0\",\n    \"vite\": \"^5.0.0\"\n  }\n}\n"
+    },
+    {
+      "folderName": "src",
+      "items": [
+        {
+          "filename": "App",
+          "fileExtension": "vue",
+          "content": "<template>\n  <div style=\"font-family: sans-serif; padding: 2rem; text-align: center\">\n    <h1 style=\"color: #42b883\">💚 Vue 3 + TypeScript</h1>\n    <p style=\"color: #555\">Start editing <code>src/App.vue</code></p>\n    <p>Count: {{ count }}</p>\n    <button @click=\"count++\" style=\"padding: 0.5rem 1rem; cursor: pointer\">\n      Click me\n    </button>\n  </div>\n</template>\n\n<script setup lang=\"ts\">\nimport { ref } from \"vue\";\nconst count = ref(0);\n</script>\n"
+        },
+        {
+          "filename": "main",
+          "fileExtension": "ts",
+          "content": "import { createApp } from \"vue\";\nimport App from \"./App.vue\";\n\ncreateApp(App).mount(\"#app\");\n"
+        }
+      ]
+    },
+    {
+      "filename": "vite.config",
+      "fileExtension": "ts",
+      "content": "import { defineConfig } from \"vite\";\nimport vue from \"@vitejs/plugin-vue\";\n\nexport default defineConfig({\n  plugins: [vue()],\n  server: {\n    port: 3000,\n    host: true,\n    strictPort: true,\n  },\n});\n"
+    }
+  ]
+}

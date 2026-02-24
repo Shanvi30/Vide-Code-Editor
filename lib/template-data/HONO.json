@@ -1,0 +1,15 @@
+{
+  "folderName": "hono-nodejs-starter",
+  "items": [
+    {
+      "filename": "index",
+      "fileExtension": "js",
+      "content": "import { Hono } from \"hono\";\nimport { serve } from \"@hono/node-server\";\n\nconst app = new Hono();\n\napp.get(\"/\", (c) => {\n  return c.html(`\n    <html>\n      <body style=\"font-family:sans-serif; padding:2rem; text-align:center\">\n        <h1>🔥 Hono.js Server</h1>\n        <p>Server is running! Start editing </p>\n        <a href=\"/api\">Try /api endpoint</a>\n      </body>\n    </html>\n  `);\n});\n\napp.get(\"/api\", (c) => {\n  return c.json({ message: \"Hello from Hono!\", status: \"running\" });\n});\n\nserve({ fetch: app.fetch, port: 3000, hostname: \"0.0.0.0\" }, () => {\n  console.log(\"Server running at http://localhost:3000\");\n});\n"
+    },
+    {
+      "filename": "package",
+      "fileExtension": "json",
+      "content": "{\n  \"name\": \"hono-template\",\n  \"version\": \"0.0.1\",\n  \"type\": \"module\",\n  \"scripts\": {\n    \"start\": \"node --watch index.js\"\n  },\n  \"dependencies\": {\n    \"hono\": \"^4.0.0\",\n    \"@hono/node-server\": \"^1.0.0\"\n  }\n}\n"
+    }
+  ]
+}

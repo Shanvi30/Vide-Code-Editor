@@ -1,0 +1,15 @@
+{
+  "folderName": "express-simple",
+  "items": [
+    {
+      "filename": "index",
+      "fileExtension": "js",
+      "content": "import express from \"express\";\n\nconst app = express();\nconst PORT = 3000;\n\napp.use(express.json());\n\napp.get(\"/\", (req, res) => {\n  res.send(`\n    <html>\n      <body style=\"font-family:sans-serif; padding:2rem; text-align:center\">\n        <h1>🚂 Express.js Server</h1>\n        <p>Server is running! Start editing</p>\n        <a href=\"/api\">Try /api endpoint</a>\n      </body>\n    </html>\n  `);\n});\n\napp.get(\"/api\", (req, res) => {\n  res.json({ message: \"Hello from Express!\", status: \"running\" });\n});\n\napp.listen(PORT, \"0.0.0.0\", () => {\n  console.log(`Server running at http://localhost:${PORT}`);\n});\n"
+    },
+    {
+      "filename": "package",
+      "fileExtension": "json",
+      "content": "{\n  \"name\": \"express-template\",\n  \"version\": \"0.0.1\",\n  \"type\": \"module\",\n  \"scripts\": {\n    \"start\": \"node --watch index.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\"\n  }\n}\n"
+    }
+  ]
+}
