@@ -1,52 +1,65 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
+import { StarIcon, StarOffIcon } from "lucide-react";
+import type React from "react";
+import { useState, useEffect, forwardRef } from "react";
+import { toast } from "sonner";
+import { toggleStarMarked } from "../actions";
 
-import { StarIcon, StarOffIcon } from "lucide-react"
-import type React from "react"
-import { useState, useEffect, forwardRef } from "react"
-import { toast } from "sonner"
-import { toggleStarMarked } from "../actions"
-
-interface MarkedToggleButtonProps extends React.ComponentPropsWithoutRef<typeof Button> {
-  markedForRevision: boolean
-  id: string
+interface MarkedToggleButtonProps extends React.ComponentPropsWithoutRef<
+  typeof Button
+> {
+  markedForRevision: boolean;
+  id: string;
+  onStarChange?: (id: string, starred: boolean) => void;
 }
 
-export const MarkedToggleButton = forwardRef<HTMLButtonElement, MarkedToggleButtonProps>(
-  ({ markedForRevision, id, onClick, className, children, ...props }, ref) => {
-    const [isMarked, setIsMarked] = useState(markedForRevision)
+export const MarkedToggleButton = forwardRef<
+  HTMLButtonElement,
+  MarkedToggleButtonProps
+>(
+  (
+    {
+      markedForRevision,
+      id,
+      onClick,
+      className,
+      children,
+      onStarChange,
+      ...props
+    },
+    ref,
+  ) => {
+    const [isMarked, setIsMarked] = useState(markedForRevision);
 
     useEffect(() => {
-      setIsMarked(markedForRevision)
-    }, [markedForRevision])
+      setIsMarked(markedForRevision);
+    }, [markedForRevision]);
 
     const handleToggle = async (event: React.MouseEvent<HTMLButtonElement>) => {
-      // Call the original onClick if provided by the parent (DropdownMenuItem)
-      onClick?.(event)
+      onClick?.(event);
 
-      const newMarkedState = !isMarked
-      setIsMarked(newMarkedState)
+      const newMarkedState = !isMarked;
+      setIsMarked(newMarkedState);
+      onStarChange?.(id, newMarkedState);
 
       try {
-        const res = await toggleStarMarked(id, newMarkedState)
-        const {success ,error , isMarked} = res;
+        const res = await toggleStarMarked(id, newMarkedState);
+        const { success, error, isMarked: resMarked } = res;
 
-    //    if ismarked true then show marked successfully otherwise show start over
-        if (isMarked && !error && success) {
-          toast.success("Added to Favorites successfully")
+        if (resMarked && !error && success) {
+          toast.success("Added to Favorites successfully");
         } else {
-          toast.success("Removed from Favorites successfully")
+          toast.success("Removed from Favorites successfully");
         }
-
-
-
       } catch (error) {
-        console.error("Failed to toggle mark for revision:", error)
-        setIsMarked(!newMarkedState) // Revert state if the update fails
-        // You might want to add a toast notification here for the user
+        console.error("Failed to toggle mark for revision:", error);
+        setIsMarked(!newMarkedState);
+        onStarChange?.(id, !newMarkedState);
+        toast.error("Failed to update favorite");
       }
-    }
+    };
 
     return (
       <Button
@@ -57,14 +70,14 @@ export const MarkedToggleButton = forwardRef<HTMLButtonElement, MarkedToggleButt
         {...props}
       >
         {isMarked ? (
-          <StarIcon size={16} className="text-red-500 mr-2" />
+          <StarIcon size={16} className="text-yellow-400 mr-2" />
         ) : (
           <StarOffIcon size={16} className="text-gray-500 mr-2" />
         )}
         {children || (isMarked ? "Remove Favorite" : "Add to Favorite")}
       </Button>
-    )
+    );
   },
-)
+);
 
-MarkedToggleButton.displayName = "MarkedToggleButton"
+MarkedToggleButton.displayName = "MarkedToggleButton";

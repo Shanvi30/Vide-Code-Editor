@@ -26,13 +26,14 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { createPlayground, toggleStarMarked } from "../actions";
 import TemplateSelectingModal from "./template-selecting-modal";
+import { useDashboard } from "./dashboard-context";
 
 interface PlaygroundData {
   id: string;
   name: string;
   icon: string;
   starred: boolean;
-  createdAt: string;   // ← yeh add karo
+  createdAt: string;
 }
 
 const lucideIconMap: Record<string, LucideIcon> = {
@@ -53,29 +54,24 @@ export function DashboardSidebar({
   const pathname = usePathname();
   const router = useRouter();
 
-  const [allPlaygrounds, setAllPlaygrounds] = useState<PlaygroundData[]>(
-    initialPlaygroundData,
-  );
+  const { sidebarItems, updateProjectStar } = useDashboard();
+  const allPlaygrounds = sidebarItems;
 
   const starredPlaygrounds = allPlaygrounds.filter((p) => p.starred);
-  // Only show 5 in sidebar
-  const recentPlaygrounds = [...allPlaygrounds].sort(
-  (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-).slice(0, 5);
+  const recentPlaygrounds = [...allPlaygrounds]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )
+    .slice(0, 5);
 
-  // ── New Playground modal ────────────────────────────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // ── Star popover (plus button) ──────────────────────────────────────────
   const [isStarPopoverOpen, setIsStarPopoverOpen] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const starPopoverRef = useRef<HTMLDivElement>(null);
-
-  // ── All Projects popover (FolderPlus button) ────────────────────────────
   const [isAllProjectsOpen, setIsAllProjectsOpen] = useState(false);
   const allProjectsRef = useRef<HTMLDivElement>(null);
 
-  // Close popovers on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -95,7 +91,6 @@ export function DashboardSidebar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ── Handlers ───────────────────────────────────────────────────────────
   const handleCreatePlayground = async (data: {
     title: string;
     template: "REACT" | "NEXTJS" | "EXPRESS" | "VUE" | "HONO" | "ANGULAR";
@@ -116,11 +111,7 @@ export function DashboardSidebar({
     setTogglingId(playground.id);
     const newStarred = !playground.starred;
 
-    setAllPlaygrounds((prev) =>
-      prev.map((p) =>
-        p.id === playground.id ? { ...p, starred: newStarred } : p,
-      ),
-    );
+    updateProjectStar(playground.id, newStarred);
 
     try {
       const res = await toggleStarMarked(playground.id, newStarred);
@@ -134,18 +125,13 @@ export function DashboardSidebar({
         throw new Error("Failed");
       }
     } catch {
-      setAllPlaygrounds((prev) =>
-        prev.map((p) =>
-          p.id === playground.id ? { ...p, starred: !newStarred } : p,
-        ),
-      );
+      updateProjectStar(playground.id, !newStarred);
       toast.error("Failed to update star");
     } finally {
       setTogglingId(null);
     }
   };
 
-  // ── Nav link helper ─────────────────────────────────────────────────────
   const navLink = (href: string, icon: React.ReactNode, label: string) => {
     const active = pathname === href;
     return (
@@ -193,14 +179,12 @@ export function DashboardSidebar({
           )}
         </div>
 
-        {/* ── Starred Section ─────────────────────────────────────────── */}
+        {/* Starred Section */}
         <div className="px-3 pt-6">
           <div className="flex items-center justify-between px-3 mb-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 uppercase tracking-widest">
               <Star className="w-3 h-3" /> Starred
             </div>
-
-            {/* Plus → Star management popover */}
             <div className="relative" ref={starPopoverRef}>
               <button
                 onClick={() => setIsStarPopoverOpen((v) => !v)}
@@ -312,14 +296,13 @@ export function DashboardSidebar({
           </div>
         </div>
 
-        {/* ── Recent Section ──────────────────────────────────────────── */}
+        {/* Recent Section */}
         <div className="px-3 pt-5 flex-1 overflow-y-auto min-h-0">
           <div className="flex items-center justify-between px-3 mb-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 uppercase tracking-widest">
               <History className="w-3 h-3" /> Recent
             </div>
 
-            {/* FolderPlus → All projects popover */}
             <div className="relative" ref={allProjectsRef}>
               <button
                 onClick={() => setIsAllProjectsOpen((v) => !v)}
@@ -331,7 +314,6 @@ export function DashboardSidebar({
 
               {isAllProjectsOpen && (
                 <div className="fixed left-64 z-[999] w-64 rounded-2xl border border-white/10 bg-[#0e0f1a] shadow-2xl shadow-black/60 overflow-hidden">
-                  {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
                     <span className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
                       All Projects
@@ -344,7 +326,6 @@ export function DashboardSidebar({
                     </button>
                   </div>
 
-                  {/* All projects list - clickable to open */}
                   <div className="flex flex-col max-h-80 overflow-y-auto py-2">
                     {allPlaygrounds.length === 0 ? (
                       <p className="px-4 py-6 text-xs text-zinc-600 text-center">
@@ -364,12 +345,10 @@ export function DashboardSidebar({
                           >
                             <div className="flex items-center gap-2.5 flex-1 min-w-0">
                               <Icon
-                                className={`w-3.5 h-3.5 shrink-0 transition-colors
-                                  ${active ? "text-indigo-400" : "text-zinc-500 group-hover:text-zinc-300"}`}
+                                className={`w-3.5 h-3.5 shrink-0 transition-colors ${active ? "text-indigo-400" : "text-zinc-500 group-hover:text-zinc-300"}`}
                               />
                               <span
-                                className={`text-sm truncate transition-colors
-                                  ${active ? "text-indigo-400" : "text-zinc-400 group-hover:text-white"}`}
+                                className={`text-sm truncate transition-colors ${active ? "text-indigo-400" : "text-zinc-400 group-hover:text-white"}`}
                               >
                                 {p.name}
                               </span>
@@ -387,7 +366,6 @@ export function DashboardSidebar({
                     )}
                   </div>
 
-                  {/* Footer */}
                   <div className="border-t border-white/5 px-4 py-2.5 flex items-center justify-between">
                     <p className="text-[10px] text-zinc-600">
                       {allPlaygrounds.length} total projects
@@ -407,7 +385,6 @@ export function DashboardSidebar({
             </div>
           </div>
 
-          {/* Only 5 recent projects in sidebar */}
           <div className="flex flex-col gap-0.5">
             {recentPlaygrounds.map((p) => {
               const Icon = lucideIconMap[p.icon] || Code2;
@@ -425,7 +402,6 @@ export function DashboardSidebar({
               );
             })}
 
-            {/* Show "and X more" if more than 5 */}
             {allPlaygrounds.length > 5 && (
               <button
                 onClick={() => setIsAllProjectsOpen(true)}

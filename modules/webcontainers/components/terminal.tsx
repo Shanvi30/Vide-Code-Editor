@@ -8,10 +8,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
-// import { Terminal } from "xterm";
-// import { FitAddon } from "xterm-addon-fit";
-// import { WebLinksAddon } from "xterm-addon-web-links";
-// import { SearchAddon } from "xterm-addon-search";
+
 import "xterm/css/xterm.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +22,6 @@ interface TerminalProps {
   webContainerInstance?: any;
 }
 
-// Define the methods that will be exposed through the ref
 export interface TerminalRef {
   writeToTerminal: (data: string) => void;
   clearTerminal: () => void;
@@ -45,7 +41,6 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
     const [searchTerm, setSearchTerm] = useState("");
     const [showSearch, setShowSearch] = useState(false);
 
-    // Command line state
     const currentLine = useRef<string>("");
     const cursorPosition = useRef<number>(0);
     const commandHistory = useRef<string[]>([]);
@@ -110,7 +105,6 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
       }
     }, []);
 
-    // Expose methods through ref
     useImperativeHandle(ref, () => ({
       writeToTerminal: (data: string) => {
         if (term.current) {
@@ -192,7 +186,6 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
           const exitCode = await process.exit;
           currentProcess.current = null;
 
-          // Show new prompt
           writePrompt();
         } catch (error) {
           if (term.current) {
@@ -244,7 +237,6 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
                 historyIndex.current--;
               }
 
-              // Clear current line and write history command
               const historyCommand =
                 commandHistory.current[historyIndex.current];
               term.current.write(
@@ -280,7 +272,6 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
             break;
 
           default:
-            // Regular character input
             if (data >= " " || data === "\t") {
               currentLine.current =
                 currentLine.current.slice(0, cursorPosition.current) +

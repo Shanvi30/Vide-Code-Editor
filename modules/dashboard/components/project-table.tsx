@@ -1,5 +1,6 @@
 "use client";
 
+import { useDashboard } from "./dashboard-context";
 import Image from "next/image";
 import { format } from "date-fns";
 import type { Project } from "../types";
@@ -46,7 +47,6 @@ import { toast } from "sonner";
 import { MarkedToggleButton } from "./marked-toggle";
 
 interface ProjectTableProps {
-  projects: Project[];
   onUpdateProject?: (
     id: string,
     data: { title: string; description: string },
@@ -92,11 +92,12 @@ const templateColors: Record<
 };
 
 export default function ProjectTable({
-  projects,
   onUpdateProject,
   onDeleteProject,
   onDuplicateProject,
 }: ProjectTableProps) {
+  const { projects, removeProject, updateProjectDetails, updateProjectStar } =
+    useDashboard();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -122,6 +123,7 @@ export default function ProjectTable({
     setIsLoading(true);
     try {
       await onUpdateProject(selectedProject.id, editData);
+      updateProjectDetails(selectedProject.id, editData);
       setEditDialogOpen(false);
       toast.success("Project updated successfully");
     } catch {
@@ -136,6 +138,7 @@ export default function ProjectTable({
     setIsLoading(true);
     try {
       await onDeleteProject(selectedProject.id);
+      removeProject(selectedProject.id);
       setDeleteDialogOpen(false);
       toast.success("Project deleted successfully");
     } catch {
@@ -252,6 +255,7 @@ export default function ProjectTable({
                         <MarkedToggleButton
                           markedForRevision={project.Starmark[0]?.isMarked}
                           id={project.id}
+                          onStarChange={updateProjectStar}
                         />
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>

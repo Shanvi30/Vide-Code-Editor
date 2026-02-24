@@ -1,10 +1,10 @@
 "use client";
 
-import { Github, ArrowUpRight } from "lucide-react";
+import { Github } from "lucide-react";
 
 const AddRepo = () => {
   return (
-    <div className="group relative cursor-pointer rounded-2xl border border-white/8 bg-white/[0.03] hover:bg-violet-500/5 hover:border-violet-500/20 transition-all duration-200 overflow-hidden p-6">
+    <div className="group relative rounded-2xl border border-white/8 bg-white/[0.03] transition-all duration-200 overflow-hidden p-6 opacity-60">
       {/* Glow on hover */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(ellipse_at_top_left,rgba(139,92,246,0.08),transparent_60%)]" />
 
@@ -20,9 +20,11 @@ const AddRepo = () => {
           </div>
         </div>
 
-        {/* Arrow */}
-        <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center opacity-40 group-hover:opacity-70 transition-opacity">
-          <ArrowUpRight className="w-4 h-4 text-violet-400 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        {/* Coming Soon badge */}
+        <div className="px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20">
+          <span className="text-xs font-medium text-violet-400">
+            Coming Soon
+          </span>
         </div>
       </div>
 

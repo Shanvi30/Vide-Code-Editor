@@ -46,8 +46,6 @@ const WebContainerPreview = ({
 
   const terminalRef = useRef<any>(null);
 
-  // Register the refresh function with parent
-  // Register the refresh function with parent
   useEffect(() => {
     if (onRegisterRefresh) {
       onRegisterRefresh(() => {
@@ -63,7 +61,6 @@ const WebContainerPreview = ({
     }
   }, [onRegisterRefresh, previewUrl]);
 
-  // Reset setup state when forceResetup changes
   useEffect(() => {
     if (forceResetup) {
       setIsSetupComplete(false);
@@ -285,11 +282,11 @@ const WebContainerPreview = ({
   }
   const getStepIcon = (stepIndex: number) => {
     if (stepIndex < currentStep) {
-      return <CheckCircle className="h-5 w-5 text-green-500" />;
+      return <CheckCircle className="h-5 w-5 text-emerald-400" />;
     } else if (stepIndex === currentStep) {
-      return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
+      return <Loader2 className="h-5 w-5 animate-spin text-indigo-400" />;
     } else {
-      return <div className="h-5 w-5 rounded-full border-2 border-gray-300" />;
+      return <div className="h-5 w-5 rounded-full border-2 border-white/20" />;
     }
   };
 
@@ -301,10 +298,10 @@ const WebContainerPreview = ({
       <span
         className={`text-sm font-medium ${
           isComplete
-            ? "text-green-600"
+            ? "text-emerald-400"
             : isActive
-              ? "text-blue-600"
-              : "text-gray-500"
+              ? "text-indigo-400"
+              : "text-zinc-600"
         }`}
       >
         {label}
@@ -316,7 +313,7 @@ const WebContainerPreview = ({
     <div className="h-full w-full flex flex-col">
       {!previewUrl ? (
         <div className="h-full flex flex-col">
-          <div className="w-full max-w-md p-6 m-5 rounded-lg bg-white dark:bg-zinc-800 shadow-sm mx-auto">
+          <div className="w-full max-w-sm p-6 mt-10 rounded-2xl border border-white/8 bg-[#0e0f1a] shadow-2xl mx-auto">
             <Progress
               value={(currentStep / totalSteps) * 100}
               className="h-2 mb-6"
