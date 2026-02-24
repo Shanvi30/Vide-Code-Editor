@@ -48,9 +48,12 @@ export const getAllPlaygroundForUser = async () => {
 
   try {
     const playground = await db.playground.findMany({
-      where: {
-        userId: user?.id,
-      },
+  where: {
+    userId: user?.id,
+  },
+  orderBy: {
+    createdAt: "desc",   // ← yeh add karo
+  },
       include: {
         user: true,
         Starmark:{

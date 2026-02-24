@@ -30,15 +30,12 @@ export const useAISuggestions = (): UseAISuggestionsReturn => {
   }, []);
 
   const fetchSuggestion = useCallback(async (type: string, editor: any) => {
-    // Read values directly — do NOT call setState to read state
     if (!editor) return;
 
     const model = editor.getModel();
     const cursorPosition = editor.getPosition();
-
     if (!model || !cursorPosition) return;
 
-    // Check isEnabled via functional update to read latest state
     let shouldFetch = false;
     setState((currentState) => {
       shouldFetch = currentState.isEnabled && !currentState.isLoading;
@@ -62,8 +59,6 @@ export const useAISuggestions = (): UseAISuggestionsReturn => {
         body: JSON.stringify(payload),
       });
 
-      // Don't throw on non-ok — just clear loading and return silently
-      // (Ollama may not be running, that's fine)
       if (!response.ok) {
         console.warn(`AI suggestion skipped: API status ${response.status}`);
         setState((prev) => ({ ...prev, isLoading: false }));
@@ -73,10 +68,9 @@ export const useAISuggestions = (): UseAISuggestionsReturn => {
       const data = await response.json();
 
       if (data.suggestion) {
-        const suggestionText = data.suggestion.trim();
         setState((prev) => ({
           ...prev,
-          suggestion: suggestionText,
+          suggestion: data.suggestion.trim(),
           position: {
             line: cursorPosition.lineNumber,
             column: cursorPosition.column,
@@ -92,8 +86,8 @@ export const useAISuggestions = (): UseAISuggestionsReturn => {
     }
   }, []);
 
-  // FIX: acceptSuggestion was a no-op — the inner function was defined but never called.
-  // Now it is a proper function that takes editor and monaco as arguments.
+  // FIX: editor.executeEdits() moved OUTSIDE setState to avoid
+  // "setState during render" React error
   const acceptSuggestion = useCallback((editor: any, monaco: any) => {
     setState((currentState) => {
       if (
@@ -106,22 +100,30 @@ export const useAISuggestions = (): UseAISuggestionsReturn => {
       }
 
       const { line, column } = currentState.position;
-      const sanitizedSuggestion = currentState.suggestion.replace(
-        /^\d+:\s*/gm,
-        "",
-      );
+      const sanitized = currentState.suggestion.replace(/^\d+:\s*/gm, "");
 
-      editor.executeEdits("", [
-        {
-          range: new monaco.Range(line, column, line, column),
-          text: sanitizedSuggestion,
-          forceMoveMarkers: true,
-        },
-      ]);
+      // Schedule the editor mutation AFTER React finishes rendering
+      setTimeout(() => {
+        try {
+          editor.executeEdits("", [
+            {
+              range: new monaco.Range(line, column, line, column),
+              text: sanitized,
+              forceMoveMarkers: true,
+            },
+          ]);
+        } catch (e) {
+          console.warn("executeEdits failed:", e);
+        }
 
-      if (editor && currentState.decoration.length > 0) {
-        editor.deltaDecorations(currentState.decoration, []);
-      }
+        if (currentState.decoration.length > 0) {
+          try {
+            editor.deltaDecorations(currentState.decoration, []);
+          } catch (e) {
+            console.warn("deltaDecorations failed:", e);
+          }
+        }
+      }, 0);
 
       return {
         ...currentState,
@@ -135,7 +137,9 @@ export const useAISuggestions = (): UseAISuggestionsReturn => {
   const rejectSuggestion = useCallback((editor: any) => {
     setState((currentState) => {
       if (editor && currentState.decoration.length > 0) {
-        editor.deltaDecorations(currentState.decoration, []);
+        try {
+          editor.deltaDecorations(currentState.decoration, []);
+        } catch {}
       }
       return {
         ...currentState,
@@ -149,7 +153,9 @@ export const useAISuggestions = (): UseAISuggestionsReturn => {
   const clearSuggestion = useCallback((editor: any) => {
     setState((currentState) => {
       if (editor && currentState.decoration.length > 0) {
-        editor.deltaDecorations(currentState.decoration, []);
+        try {
+          editor.deltaDecorations(currentState.decoration, []);
+        } catch {}
       }
       return {
         ...currentState,

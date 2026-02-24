@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ArrowUpRight,
   Zap,
@@ -8,8 +10,39 @@ import {
   Code2,
 } from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export default function Home() {
+  const templates = ["React", "Angular", "Hono", "Vue", "Next.js", "Express"];
+  const [current, setCurrent] = useState(0);
+  const [displayed, setDisplayed] = useState("");
+  const [typing, setTyping] = useState(true);
+
+  useEffect(() => {
+    const word = templates[current];
+    let i = typing ? 0 : word.length;
+
+    const interval = setInterval(() => {
+      if (typing) {
+        setDisplayed(word.slice(0, i + 1));
+        i++;
+        if (i === word.length) {
+          clearInterval(interval);
+          setTimeout(() => setTyping(false), 1200);
+        }
+      } else {
+        setDisplayed(word.slice(0, i - 1));
+        i--;
+        if (i === 0) {
+          clearInterval(interval);
+          setCurrent((prev) => (prev + 1) % templates.length);
+          setTyping(true);
+        }
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [current, typing]);
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-[#050508]">
       {/* Ambient glows */}
@@ -27,10 +60,12 @@ export default function Home() {
 
         {/* Headline */}
         <h1 className="max-w-3xl text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.05] text-white">
-          Code smarter with{" "}
+          Code in{" "}
           <span className="bg-gradient-to-r from-indigo-400 via-blue-400 to-blue-800 bg-clip-text text-transparent">
-            AI intelligence
-          </span>
+            {displayed} |<span className="animate-pulse">|</span>
+          </span>{" "}
+          <br></br>
+          Right in Browser
         </h1>
 
         {/* Subheading */}
@@ -48,7 +83,7 @@ export default function Home() {
               <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </button>
           </Link>
-          <Link href="/docs/components/background-paths">
+          <Link href="/docs">
             <button className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/8 text-zinc-300 hover:text-white font-medium px-6 py-3 text-sm transition-all duration-200">
               View Docs
             </button>
@@ -217,7 +252,6 @@ export default function App() {
           ))}
         </div>
       </section>
-
     </div>
   );
 }

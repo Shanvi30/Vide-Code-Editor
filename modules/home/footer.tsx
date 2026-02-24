@@ -1,40 +1,56 @@
 import Link from "next/link";
-import { Github as LucideGithub } from "lucide-react";
-
-
-
+import { Github, Twitter, Linkedin, Code2 } from "lucide-react";
 
 export function Footer() {
-  const socialLinks = [
-    {
-      href: "#",
-      icon: (
-        <LucideGithub className="w-5 h-5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" />
-      ),
-    },
-  ];
-
   return (
-    <footer className="border-t border-zinc-200 dark:border-zinc-800">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 flex flex-col items-center space-y-6 text-center">
-        {/* Social Links */}
-        <div className="flex gap-4">
-          {socialLinks.map((link, index) => (
+    <footer className="relative border-t border-white/5 bg-[#07080f]">
+      {/* Top glow line */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-px bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
+
+      <div className="mx-auto max-w-5xl px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* Logo + copyright */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-6 h-6 rounded-lg bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center">
+            <Code2 className="w-3 h-3 text-indigo-400" />
+          </div>
+          <span className="text-xs text-zinc-500">
+            &copy; {new Date().getFullYear()}{" "}
+            <span className="text-zinc-400 font-medium">VibeCode Editor</span>.
+            All rights reserved.
+          </span>
+        </div>
+
+        {/* Social icons */}
+        <div className="flex items-center gap-2">
+          {[
+            {
+              href: "#",
+              icon: <Github className="w-3.5 h-3.5" />,
+              label: "GitHub",
+            },
+            {
+              href: "#",
+              icon: <Twitter className="w-3.5 h-3.5" />,
+              label: "Twitter",
+            },
+            {
+              href: "#",
+              icon: <Linkedin className="w-3.5 h-3.5" />,
+              label: "LinkedIn",
+            },
+          ].map((s) => (
             <Link
-              key={index}
-              href={link.href || "#"}
+              key={s.label}
+              href={s.href}
               target="_blank"
               rel="noopener noreferrer"
+              title={s.label}
+              className="w-7 h-7 rounded-lg border border-white/8 bg-white/[0.03] flex items-center justify-center text-zinc-500 hover:text-white hover:border-indigo-500/30 hover:bg-indigo-500/10 transition-all duration-150"
             >
-              {link.icon}
+              {s.icon}
             </Link>
           ))}
         </div>
-
-        {/* Copyright Notice */}
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          &copy; {new Date().getFullYear()} Codesnippet. All rights reserved.
-        </p>
       </div>
     </footer>
   );

@@ -32,6 +32,7 @@ interface PlaygroundData {
   name: string;
   icon: string;
   starred: boolean;
+  createdAt: string;   // ← yeh add karo
 }
 
 const lucideIconMap: Record<string, LucideIcon> = {
@@ -58,7 +59,9 @@ export function DashboardSidebar({
 
   const starredPlaygrounds = allPlaygrounds.filter((p) => p.starred);
   // Only show 5 in sidebar
-  const recentPlaygrounds = allPlaygrounds.slice(0, 5);
+  const recentPlaygrounds = [...allPlaygrounds].sort(
+  (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+).slice(0, 5);
 
   // ── New Playground modal ────────────────────────────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);

@@ -8,420 +8,436 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
-
-import type { Terminal } from "xterm";
-import type { FitAddon } from "xterm-addon-fit";
-import type { SearchAddon } from "xterm-addon-search";
-
+// import { Terminal } from "xterm";
+// import { FitAddon } from "xterm-addon-fit";
+// import { WebLinksAddon } from "xterm-addon-web-links";
+// import { SearchAddon } from "xterm-addon-search";
+import "xterm/css/xterm.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Copy, Trash2, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Theme = "dark" | "light";
-
 interface TerminalProps {
   webcontainerUrl?: string;
   className?: string;
-  theme?: Theme;
+  theme?: "dark" | "light";
   webContainerInstance?: any;
 }
 
+// Define the methods that will be exposed through the ref
 export interface TerminalRef {
   writeToTerminal: (data: string) => void;
   clearTerminal: () => void;
   focusTerminal: () => void;
 }
 
-const TERMINAL_THEMES: Record<Theme, Record<string, string>> = {
-  dark: {
-    background: "#09090B",
-    foreground: "#FAFAFA",
-    cursor: "#FAFAFA",
-    cursorAccent: "#09090B",
-    selection: "#27272A",
-    black: "#18181B",
-    red: "#EF4444",
-    green: "#22C55E",
-    yellow: "#EAB308",
-    blue: "#3B82F6",
-    magenta: "#A855F7",
-    cyan: "#06B6D4",
-    white: "#F4F4F5",
-    brightBlack: "#3F3F46",
-    brightRed: "#F87171",
-    brightGreen: "#4ADE80",
-    brightYellow: "#FDE047",
-    brightBlue: "#60A5FA",
-    brightMagenta: "#C084FC",
-    brightCyan: "#22D3EE",
-    brightWhite: "#FFFFFF",
-  },
-  light: {
-    background: "#FFFFFF",
-    foreground: "#18181B",
-    cursor: "#18181B",
-    cursorAccent: "#FFFFFF",
-    selection: "#E4E4E7",
-    black: "#18181B",
-    red: "#DC2626",
-    green: "#16A34A",
-    yellow: "#CA8A04",
-    blue: "#2563EB",
-    magenta: "#9333EA",
-    cyan: "#0891B2",
-    white: "#F4F4F5",
-    brightBlack: "#71717A",
-    brightRed: "#EF4444",
-    brightGreen: "#22C55E",
-    brightYellow: "#EAB308",
-    brightBlue: "#3B82F6",
-    brightMagenta: "#A855F7",
-    brightCyan: "#06B6D4",
-    brightWhite: "#FAFAFA",
-  },
-};
-
 const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
   (
-    {
-      webcontainerUrl,
-      className,
-      theme = "dark",
-      webContainerInstance,
-    }: TerminalProps,
+    { webcontainerUrl, className, theme = "dark", webContainerInstance },
     ref,
   ) => {
     const terminalRef = useRef<HTMLDivElement>(null);
-    const term = useRef<Terminal | null>(null);
-    const fitAddon = useRef<FitAddon | null>(null);
-    const searchAddon = useRef<SearchAddon | null>(null);
-
+    const term = useRef<any>(null);
+    const fitAddon = useRef<any>(null);
+    const searchAddon = useRef<any>(null);
     const [isConnected, setIsConnected] = useState(false);
-    const [isMounted, setIsMounted] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [showSearch, setShowSearch] = useState(false);
 
-    // ── All mutable state stored in refs so closures never go stale ──
+    // Command line state
     const currentLine = useRef<string>("");
     const cursorPosition = useRef<number>(0);
     const commandHistory = useRef<string[]>([]);
     const historyIndex = useRef<number>(-1);
     const currentProcess = useRef<any>(null);
+    const shellProcess = useRef<any>(null);
 
-    // KEY FIX: webContainerInstance always up-to-date via ref
-    const wcRef = useRef<any>(null);
-    wcRef.current = webContainerInstance;
+    const terminalThemes = {
+      dark: {
+        background: "#09090B",
+        foreground: "#FAFAFA",
+        cursor: "#FAFAFA",
+        cursorAccent: "#09090B",
+        selection: "#27272A",
+        black: "#18181B",
+        red: "#EF4444",
+        green: "#22C55E",
+        yellow: "#EAB308",
+        blue: "#3B82F6",
+        magenta: "#A855F7",
+        cyan: "#06B6D4",
+        white: "#F4F4F5",
+        brightBlack: "#3F3F46",
+        brightRed: "#F87171",
+        brightGreen: "#4ADE80",
+        brightYellow: "#FDE047",
+        brightBlue: "#60A5FA",
+        brightMagenta: "#C084FC",
+        brightCyan: "#22D3EE",
+        brightWhite: "#FFFFFF",
+      },
+      light: {
+        background: "#FFFFFF",
+        foreground: "#18181B",
+        cursor: "#18181B",
+        cursorAccent: "#FFFFFF",
+        selection: "#E4E4E7",
+        black: "#18181B",
+        red: "#DC2626",
+        green: "#16A34A",
+        yellow: "#CA8A04",
+        blue: "#2563EB",
+        magenta: "#9333EA",
+        cyan: "#0891B2",
+        white: "#F4F4F5",
+        brightBlack: "#71717A",
+        brightRed: "#EF4444",
+        brightGreen: "#22C55E",
+        brightYellow: "#EAB308",
+        brightBlue: "#3B82F6",
+        brightMagenta: "#A855F7",
+        brightCyan: "#06B6D4",
+        brightWhite: "#FAFAFA",
+      },
+    };
 
-    const activeTheme = TERMINAL_THEMES[theme];
-
-    // ── Prompt ──────────────────────────────────────────────────────────
-    const writePrompt = () => {
+    const writePrompt = useCallback(() => {
       if (term.current) {
         term.current.write("\r\n$ ");
         currentLine.current = "";
         cursorPosition.current = 0;
       }
-    };
+    }, []);
 
-    // ── Command execution — reads wcRef so always has latest instance ──
-    const executeCommand = async (command: string) => {
-      if (!term.current) return;
+    // Expose methods through ref
+    useImperativeHandle(ref, () => ({
+      writeToTerminal: (data: string) => {
+        if (term.current) {
+          term.current.write(data);
+        }
+      },
+      clearTerminal: () => {
+        clearTerminal();
+      },
+      focusTerminal: () => {
+        if (term.current) {
+          term.current.focus();
+        }
+      },
+    }));
 
-      if (
-        command.trim() &&
-        commandHistory.current[commandHistory.current.length - 1] !== command
-      ) {
-        commandHistory.current.push(command);
-      }
-      historyIndex.current = -1;
+    const executeCommand = useCallback(
+      async (command: string) => {
+        if (!webContainerInstance || !term.current) return;
 
-      if (command.trim() === "clear") {
-        term.current.clear();
-        writePrompt();
-        return;
-      }
+        // Add to history
+        if (
+          command.trim() &&
+          commandHistory.current[commandHistory.current.length - 1] !== command
+        ) {
+          commandHistory.current.push(command);
+        }
+        historyIndex.current = -1;
 
-      if (command.trim() === "history") {
-        commandHistory.current.forEach((cmd, i) => {
-          term.current!.writeln(`  ${i + 1}  ${cmd}`);
-        });
-        writePrompt();
-        return;
-      }
+        try {
+          // Handle built-in commands
+          if (command.trim() === "clear") {
+            term.current.clear();
+            writePrompt();
+            return;
+          }
 
-      if (command.trim() === "") {
-        writePrompt();
-        return;
-      }
+          if (command.trim() === "history") {
+            commandHistory.current.forEach((cmd, index) => {
+              term.current!.writeln(`  ${index + 1}  ${cmd}`);
+            });
+            writePrompt();
+            return;
+          }
 
-      if (!wcRef.current) {
-        term.current.writeln(
-          "\r\n⚠ WebContainer not ready yet. Please wait...",
-        );
-        writePrompt();
-        return;
-      }
+          if (command.trim() === "") {
+            writePrompt();
+            return;
+          }
+
+          // Parse command
+          const parts = command.trim().split(" ");
+          const cmd = parts[0];
+          const args = parts.slice(1);
+
+          // Execute in WebContainer
+          term.current.writeln("");
+          const process = await webContainerInstance.spawn(cmd, args, {
+            terminal: {
+              cols: term.current.cols,
+              rows: term.current.rows,
+            },
+          });
+
+          currentProcess.current = process;
+
+          // Handle process output
+          process.output.pipeTo(
+            new WritableStream({
+              write(data) {
+                if (term.current) {
+                  term.current.write(data);
+                }
+              },
+            }),
+          );
+
+          // Wait for process to complete
+          const exitCode = await process.exit;
+          currentProcess.current = null;
+
+          // Show new prompt
+          writePrompt();
+        } catch (error) {
+          if (term.current) {
+            term.current.writeln(`\r\nCommand not found: ${command}`);
+            writePrompt();
+          }
+          currentProcess.current = null;
+        }
+      },
+      [webContainerInstance, writePrompt],
+    );
+
+    const handleTerminalInput = useCallback(
+      (data: string) => {
+        if (!term.current) return;
+
+        // Handle special characters
+        switch (data) {
+          case "\r": // Enter
+            executeCommand(currentLine.current);
+            break;
+
+          case "\u007F": // Backspace
+            if (cursorPosition.current > 0) {
+              currentLine.current =
+                currentLine.current.slice(0, cursorPosition.current - 1) +
+                currentLine.current.slice(cursorPosition.current);
+              cursorPosition.current--;
+
+              // Update terminal display
+              term.current.write("\b \b");
+            }
+            break;
+
+          case "\u0003": // Ctrl+C
+            if (currentProcess.current) {
+              currentProcess.current.kill();
+              currentProcess.current = null;
+            }
+            term.current.writeln("^C");
+            writePrompt();
+            break;
+
+          case "\u001b[A": // Up arrow
+            if (commandHistory.current.length > 0) {
+              if (historyIndex.current === -1) {
+                historyIndex.current = commandHistory.current.length - 1;
+              } else if (historyIndex.current > 0) {
+                historyIndex.current--;
+              }
+
+              // Clear current line and write history command
+              const historyCommand =
+                commandHistory.current[historyIndex.current];
+              term.current.write(
+                "\r$ " + " ".repeat(currentLine.current.length) + "\r$ ",
+              );
+              term.current.write(historyCommand);
+              currentLine.current = historyCommand;
+              cursorPosition.current = historyCommand.length;
+            }
+            break;
+
+          case "\u001b[B": // Down arrow
+            if (historyIndex.current !== -1) {
+              if (historyIndex.current < commandHistory.current.length - 1) {
+                historyIndex.current++;
+                const historyCommand =
+                  commandHistory.current[historyIndex.current];
+                term.current.write(
+                  "\r$ " + " ".repeat(currentLine.current.length) + "\r$ ",
+                );
+                term.current.write(historyCommand);
+                currentLine.current = historyCommand;
+                cursorPosition.current = historyCommand.length;
+              } else {
+                historyIndex.current = -1;
+                term.current.write(
+                  "\r$ " + " ".repeat(currentLine.current.length) + "\r$ ",
+                );
+                currentLine.current = "";
+                cursorPosition.current = 0;
+              }
+            }
+            break;
+
+          default:
+            // Regular character input
+            if (data >= " " || data === "\t") {
+              currentLine.current =
+                currentLine.current.slice(0, cursorPosition.current) +
+                data +
+                currentLine.current.slice(cursorPosition.current);
+              cursorPosition.current++;
+              term.current.write(data);
+            }
+            break;
+        }
+      },
+      [executeCommand, writePrompt],
+    );
+    const initializeTerminal = useCallback(async () => {
+      if (!terminalRef.current || term.current) return;
+
+      const { Terminal } = await import("xterm");
+      const { FitAddon } = await import("xterm-addon-fit");
+      const { WebLinksAddon } = await import("xterm-addon-web-links");
+      const { SearchAddon } = await import("xterm-addon-search");
+
+      const terminal = new Terminal({
+        cursorBlink: true,
+        fontFamily: '"Fira Code", "JetBrains Mono", "Consolas", monospace',
+        fontSize: 14,
+        lineHeight: 1.2,
+        theme: terminalThemes[theme],
+        convertEol: true,
+        scrollback: 1000,
+      });
+
+      const fitAddonInstance = new FitAddon();
+      const webLinksAddon = new WebLinksAddon();
+      const searchAddonInstance = new SearchAddon();
+
+      terminal.loadAddon(fitAddonInstance);
+      terminal.loadAddon(webLinksAddon);
+      terminal.loadAddon(searchAddonInstance);
+
+      terminal.open(terminalRef.current);
+
+      fitAddon.current = fitAddonInstance;
+      searchAddon.current = searchAddonInstance;
+      term.current = terminal;
+
+      terminal.onData(handleTerminalInput);
+
+      setTimeout(() => {
+        fitAddonInstance.fit();
+      }, 100);
+
+      terminal.writeln("🚀 WebContainer Terminal");
+      terminal.writeln("Type 'help' for available commands");
+      writePrompt();
+    }, [theme, handleTerminalInput, writePrompt]);
+
+    const connectToWebContainer = useCallback(async () => {
+      if (!webContainerInstance || !term.current) return;
 
       try {
-        const parts = command.trim().split(" ");
-        const cmd = parts[0];
-        const args = parts.slice(1);
-
-        term.current.writeln("");
-        const process = await wcRef.current.spawn(cmd, args, {
-          terminal: { cols: term.current.cols, rows: term.current.rows },
-        });
-
-        currentProcess.current = process;
-
-        process.output.pipeTo(
-          new WritableStream({
-            write(data: string) {
-              term.current?.write(data);
-            },
-          }),
-        );
-
-        await process.exit;
-        currentProcess.current = null;
+        setIsConnected(true);
+        term.current.writeln("✅ Connected to WebContainer");
+        term.current.writeln("Ready to execute commands");
         writePrompt();
-      } catch {
-        term.current?.writeln(`\r\nCommand not found: ${command}`);
-        writePrompt();
-        currentProcess.current = null;
+      } catch (error) {
+        setIsConnected(false);
+        term.current.writeln("❌ Failed to connect to WebContainer");
+        console.error("WebContainer connection error:", error);
       }
-    };
+    }, [webContainerInstance, writePrompt]);
 
-    // ── Keyboard handler — plain function ref, never stale ───────────────
-    const handleInput = (data: string) => {
-      if (!term.current) return;
-
-      switch (data) {
-        case "\r":
-          executeCommand(currentLine.current);
-          break;
-
-        case "\u007F": // Backspace
-          if (cursorPosition.current > 0) {
-            currentLine.current =
-              currentLine.current.slice(0, cursorPosition.current - 1) +
-              currentLine.current.slice(cursorPosition.current);
-            cursorPosition.current--;
-            term.current.write("\b \b");
-          }
-          break;
-
-        case "\u0003": // Ctrl+C
-          if (currentProcess.current) {
-            currentProcess.current.kill();
-            currentProcess.current = null;
-          }
-          term.current.writeln("^C");
-          writePrompt();
-          break;
-
-        case "\u001b[A": // Up arrow
-          if (commandHistory.current.length > 0) {
-            if (historyIndex.current === -1) {
-              historyIndex.current = commandHistory.current.length - 1;
-            } else if (historyIndex.current > 0) {
-              historyIndex.current--;
-            }
-            const cmd = commandHistory.current[historyIndex.current];
-            term.current.write(
-              "\r$ " + " ".repeat(currentLine.current.length) + "\r$ ",
-            );
-            term.current.write(cmd);
-            currentLine.current = cmd;
-            cursorPosition.current = cmd.length;
-          }
-          break;
-
-        case "\u001b[B": // Down arrow
-          if (historyIndex.current !== -1) {
-            if (historyIndex.current < commandHistory.current.length - 1) {
-              historyIndex.current++;
-              const cmd = commandHistory.current[historyIndex.current];
-              term.current.write(
-                "\r$ " + " ".repeat(currentLine.current.length) + "\r$ ",
-              );
-              term.current.write(cmd);
-              currentLine.current = cmd;
-              cursorPosition.current = cmd.length;
-            } else {
-              historyIndex.current = -1;
-              term.current.write(
-                "\r$ " + " ".repeat(currentLine.current.length) + "\r$ ",
-              );
-              currentLine.current = "";
-              cursorPosition.current = 0;
-            }
-          }
-          break;
-
-        default:
-          if (data >= " " || data === "\t") {
-            currentLine.current =
-              currentLine.current.slice(0, cursorPosition.current) +
-              data +
-              currentLine.current.slice(cursorPosition.current);
-            cursorPosition.current++;
-            term.current.write(data);
-          }
-          break;
-      }
-    };
-
-    // Store handleInput in ref so onData always calls latest version
-    const handleInputRef = useRef(handleInput);
-    handleInputRef.current = handleInput;
-
-    // ── Toolbar ───────────────────────────────────────────────────────────
-    const clearTerminalDisplay = useCallback(() => {
+    const clearTerminal = useCallback(() => {
       if (term.current) {
         term.current.clear();
         term.current.writeln("🚀 WebContainer Terminal");
         writePrompt();
       }
-    }, []);
+    }, [writePrompt]);
 
     const copyTerminalContent = useCallback(async () => {
-      const content = term.current?.getSelection();
-      if (content) {
-        try {
-          await navigator.clipboard.writeText(content);
-        } catch {}
+      if (term.current) {
+        const content = term.current.getSelection();
+        if (content) {
+          try {
+            await navigator.clipboard.writeText(content);
+          } catch (error) {
+            console.error("Failed to copy to clipboard:", error);
+          }
+        }
       }
     }, []);
 
     const downloadTerminalLog = useCallback(() => {
-      if (!term.current) return;
-      const buffer = term.current.buffer.active;
-      let content = "";
-      for (let i = 0; i < buffer.length; i++) {
-        const line = buffer.getLine(i);
-        if (line) content += line.translateToString(true) + "\n";
+      if (term.current) {
+        const buffer = term.current.buffer.active;
+        let content = "";
+
+        for (let i = 0; i < buffer.length; i++) {
+          const line = buffer.getLine(i);
+          if (line) {
+            content += line.translateToString(true) + "\n";
+          }
+        }
+
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `terminal-log-${new Date().toISOString().slice(0, 19)}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
       }
-      const blob = new Blob([content], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `terminal-log-${new Date().toISOString().slice(0, 19)}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
     }, []);
 
-    const searchInTerminal = useCallback((query: string) => {
-      if (searchAddon.current && query) searchAddon.current.findNext(query);
+    const searchInTerminal = useCallback((term: string) => {
+      if (searchAddon.current && term) {
+        searchAddon.current.findNext(term);
+      }
     }, []);
 
-    useImperativeHandle(ref, () => ({
-      writeToTerminal: (data: string) => {
-        term.current?.write(data);
-      },
-      clearTerminal: () => {
-        clearTerminalDisplay();
-      },
-      focusTerminal: () => {
-        term.current?.focus();
-      },
-    }));
-
-    // ── xterm init — runs once in browser ────────────────────────────────
     useEffect(() => {
-      setIsMounted(true);
-      if (!terminalRef.current || term.current) return;
+      initializeTerminal();
 
-      let resizeObserver: ResizeObserver | null = null;
-
-      (async () => {
-        const { Terminal } = await import("xterm");
-        const { FitAddon } = await import("xterm-addon-fit");
-        const { WebLinksAddon } = await import("xterm-addon-web-links");
-        const { SearchAddon } = await import("xterm-addon-search");
-
-        if (!terminalRef.current) return;
-
-        const terminal = new Terminal({
-          cursorBlink: true,
-          fontFamily: '"Fira Code", "JetBrains Mono", "Consolas", monospace',
-          fontSize: 14,
-          lineHeight: 1.2,
-          letterSpacing: 0,
-          theme: TERMINAL_THEMES[theme],
-          allowTransparency: false,
-          convertEol: true,
-          scrollback: 1000,
-          tabStopWidth: 4,
-        });
-
-        const fitAddonInstance = new FitAddon();
-        const webLinksAddon = new WebLinksAddon();
-        const searchAddonInstance = new SearchAddon();
-
-        terminal.loadAddon(fitAddonInstance);
-        terminal.loadAddon(webLinksAddon);
-        terminal.loadAddon(searchAddonInstance);
-
-        terminal.open(terminalRef.current);
-
-        fitAddon.current = fitAddonInstance;
-        searchAddon.current = searchAddonInstance;
-        term.current = terminal;
-
-        // KEY FIX: onData calls handleInputRef.current — always latest, never stale
-        terminal.onData((data) => handleInputRef.current(data));
-
-        setTimeout(() => {
-          try {
-            fitAddonInstance.fit();
-          } catch {}
-        }, 200);
-
-        terminal.writeln("🚀 WebContainer Terminal");
-        terminal.writeln("Waiting for WebContainer...");
-
-        resizeObserver = new ResizeObserver(() => {
+      // Handle resize
+      const resizeObserver = new ResizeObserver(() => {
+        if (fitAddon.current) {
           setTimeout(() => {
-            try {
-              fitAddon.current?.fit();
-            } catch {}
-          }, 200);
-        });
-        resizeObserver.observe(terminalRef.current!);
-      })();
+            fitAddon.current?.fit();
+          }, 100);
+        }
+      });
+
+      if (terminalRef.current) {
+        resizeObserver.observe(terminalRef.current);
+      }
 
       return () => {
-        resizeObserver?.disconnect();
-        if (currentProcess.current) currentProcess.current.kill();
+        resizeObserver.disconnect();
+        if (currentProcess.current) {
+          currentProcess.current.kill();
+        }
+        if (shellProcess.current) {
+          shellProcess.current.kill();
+        }
         if (term.current) {
           term.current.dispose();
           term.current = null;
         }
       };
-    }, []);
+    }, [initializeTerminal]);
 
-    // ── Connect when WebContainer becomes available ───────────────────────
     useEffect(() => {
-      if (!webContainerInstance || isConnected) return;
+      if (webContainerInstance && term.current && !isConnected) {
+        connectToWebContainer();
+      }
+    }, [webContainerInstance, connectToWebContainer, isConnected]);
 
-      const interval = setInterval(() => {
-        if (term.current) {
-          clearInterval(interval);
-          setIsConnected(true);
-          term.current.writeln(
-            "\r\n✅ WebContainer ready! Type commands below.",
-          );
-          writePrompt();
-          term.current.focus();
-        }
-      }, 100);
-
-      return () => clearInterval(interval);
-    }, [webContainerInstance, isConnected]);
-
-    // ── Render ────────────────────────────────────────────────────────────
     return (
       <div
         className={cn(
@@ -429,42 +445,47 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
           className,
         )}
       >
-        {/* Header */}
+        {/* Terminal Header */}
         <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/50">
           <div className="flex items-center gap-2">
             <div className="flex gap-1">
-              <div className="w-3 h-3 rounded-full bg-red-500" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500" />
-              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
             </div>
             <span className="text-sm font-medium">WebContainer Terminal</span>
             {isConnected && (
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                 <span className="text-xs text-muted-foreground">Connected</span>
               </div>
             )}
           </div>
+
           <div className="flex items-center gap-1">
             {showSearch && (
-              <Input
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setSearchTerm(e.target.value);
-                  searchInTerminal(e.target.value);
-                }}
-                className="h-6 w-32 text-xs"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    searchInTerminal(e.target.value);
+                  }}
+                  className="h-6 w-32 text-xs"
+                />
+              </div>
             )}
+
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowSearch((s) => !s)}
+              onClick={() => setShowSearch(!showSearch)}
               className="h-6 w-6 p-0"
             >
               <Search className="h-3 w-3" />
             </Button>
+
             <Button
               variant="ghost"
               size="sm"
@@ -473,6 +494,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
             >
               <Copy className="h-3 w-3" />
             </Button>
+
             <Button
               variant="ghost"
               size="sm"
@@ -481,10 +503,11 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
             >
               <Download className="h-3 w-3" />
             </Button>
+
             <Button
               variant="ghost"
               size="sm"
-              onClick={clearTerminalDisplay}
+              onClick={clearTerminal}
               className="h-6 w-6 p-0"
             >
               <Trash2 className="h-3 w-3" />
@@ -492,27 +515,15 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
           </div>
         </div>
 
-        {/* Terminal body */}
+        {/* Terminal Content */}
         <div className="flex-1 relative">
-          {!isMounted ? (
-            <div
-              className="absolute inset-0 p-2 flex items-center justify-center"
-              style={{ background: activeTheme.background }}
-            >
-              <span
-                className="text-xs"
-                style={{ color: activeTheme.foreground, opacity: 0.4 }}
-              >
-                Initializing terminal...
-              </span>
-            </div>
-          ) : (
-            <div
-              ref={terminalRef}
-              className="absolute inset-0 p-2"
-              style={{ background: activeTheme.background }}
-            />
-          )}
+          <div
+            ref={terminalRef}
+            className="absolute inset-0 p-2"
+            style={{
+              background: terminalThemes[theme].background,
+            }}
+          />
         </div>
       </div>
     );
