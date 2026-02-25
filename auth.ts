@@ -25,7 +25,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             email: user.email!,
             name: user.name,
             image: user.image,
-           
+
             accounts: {
               // @ts-ignore
               create: {
@@ -44,7 +44,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           },
         });
 
-        if (!newUser) return false; // Return false if user creation fails
+        if (!newUser) return false;
       } else {
         // Link the account if user exists
         const existingAccount = await db.account.findUnique({
@@ -70,7 +70,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
               tokenType: account.token_type,
               scope: account.scope,
               idToken: account.id_token,
-              // @ts-ignore
               sessionState: account.session_state,
             },
           });
@@ -81,10 +80,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     },
 
     async jwt({ token, user, account }) {
-      if(!token.sub) return token;
+      if (!token.sub) return token;
       const existingUser = await getUserById(token.sub)
 
-      if(!existingUser) return token;
+      if (!existingUser) return token;
 
       const exisitingAccount = await getAccountByUserId(existingUser.id);
 
@@ -96,19 +95,18 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     },
 
     async session({ session, token }) {
-      // Attach the user ID from the token to the session
-    if(token.sub  && session.user){
-      session.user.id = token.sub
-    } 
+      if (token.sub && session.user) {
+        session.user.id = token.sub
+      }
 
-    if(token.sub && session.user){
-      session.user.role = token.role
-    }
+      if (token.sub && session.user) {
+        session.user.role = token.role
+      }
 
-    return session;
+      return session;
     },
   },
-  
+
   secret: process.env.AUTH_SECRET,
   adapter: PrismaAdapter(db),
   session: { strategy: "jwt" },

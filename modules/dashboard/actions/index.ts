@@ -52,7 +52,7 @@ export const getAllPlaygroundForUser = async () => {
     userId: user?.id,
   },
   orderBy: {
-    createdAt: "desc",   // ← yeh add karo
+    createdAt: "desc",
   },
       include: {
         user: true,
@@ -132,7 +132,6 @@ export const duplicateProjectById = async (id: string) => {
   try {
     const originalPlayground = await db.playground.findUnique({
       where: { id },
-      // todo: add tempalte files
     });
     if (!originalPlayground) {
       throw new Error("Original playground not found");
@@ -145,7 +144,6 @@ export const duplicateProjectById = async (id: string) => {
         template: originalPlayground.template,
         userId: originalPlayground.userId,
 
-        // todo: add template files
       },
     });
 

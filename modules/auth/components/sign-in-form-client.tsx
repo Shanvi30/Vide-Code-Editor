@@ -12,7 +12,6 @@ const SignInFormClient = () => {
     <div className="relative w-full max-w-sm">
       {/* Card */}
       <div className="relative rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-2xl overflow-hidden">
-        {/* Top shimmer line */}
         <div className="h-px w-full bg-gradient-to-r from-transparent via-indigo-400/60 to-transparent" />
 
         <div className="px-8 py-8">
@@ -102,7 +101,6 @@ const SignInFormClient = () => {
           </p>
         </div>
 
-        {/* Bottom shimmer line */}
         <div className="h-px w-full bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
       </div>
     </div>

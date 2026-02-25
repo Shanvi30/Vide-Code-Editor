@@ -190,13 +190,13 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
       if (!response.ok) throw new Error("API error");
 
       if (streamResponse && response.body) {
-        // Streaming response handle karo
+        // Streaming response
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let assistantContent = "";
         const assistantId = Date.now().toString();
 
-        // Pehle empty message add karo
+        // Add Empty Message
         setMessages((prev) => [
           ...prev,
           {
@@ -238,7 +238,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
           }
         }
       } else {
-        // Non-streaming response handle karo
+        // Non-streaming response
         const data = await response.json();
         setMessages((prev) => [
           ...prev,

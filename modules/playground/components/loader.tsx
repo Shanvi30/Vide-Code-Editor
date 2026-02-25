@@ -8,7 +8,7 @@ interface LoadingStepProps {
 
 const LoadingStep: React.FC<LoadingStepProps> = ({ currentStep, step, label }) => {
   const isComplete = currentStep > step;
-  const isActive   = currentStep === step;
+  const isActive = currentStep === step;
 
   return (
     <div className="flex items-center gap-3">
@@ -28,11 +28,10 @@ const LoadingStep: React.FC<LoadingStepProps> = ({ currentStep, step, label }) =
       )}
 
       {/* Label */}
-      <span className={`text-xs font-medium transition-colors ${
-        isComplete ? "text-emerald-400" :
-        isActive   ? "text-white" :
-                     "text-zinc-600"
-      }`}>
+      <span className={`text-xs font-medium transition-colors ${isComplete ? "text-emerald-400" :
+          isActive ? "text-white" :
+            "text-zinc-600"
+        }`}>
         {label}
       </span>
     </div>

@@ -56,7 +56,6 @@ const UserButton = () => {
 
         <DropdownMenuSeparator />
 
-        {/* Logout — direct onClick, no wrapper component */}
         <DropdownMenuItem
           onClick={handleLogout}
           className="text-blue-400 hover:text-indigo-300 focus:text-blue-300 cursor-pointer"
