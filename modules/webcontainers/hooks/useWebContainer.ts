@@ -15,30 +15,6 @@ interface UseWebContainerReturn {
   destroy: () => void;
 }
 
-// ─── Module-level singleton ───────────────────────────────────────────────────
-// WebContainer can only be booted ONCE per page load. Storing it outside the
-// hook prevents React re-renders / Strict Mode double-invocations from trying
-// to boot a second instance and crashing with:
-// "Only a single WebContainer instance can be booted"
-let globalInstance: WebContainer | null = null;
-let bootPromise: Promise<WebContainer> | null = null;
-
-function getOrBootWebContainer(): Promise<WebContainer> {
-  if (globalInstance) {
-    return Promise.resolve(globalInstance);
-  }
-  if (bootPromise) {
-    return bootPromise;
-  }
-  bootPromise = WebContainer.boot().then((wc) => {
-    globalInstance = wc;
-    return wc;
-  });
-  return bootPromise;
-}
-
-// ─── Hook ─────────────────────────────────────────────────────────────────────
-
 export const useWebContainer = ({
   templateData,
 }: UseWebContainerProps): UseWebContainerReturn => {
@@ -47,13 +23,25 @@ export const useWebContainer = ({
   const [error, setError] = useState<string | null>(null);
   const [instance, setInstance] = useState<WebContainer | null>(null);
   const mountedRef = useRef(true);
+  const wcRef = useRef<WebContainer | null>(null);
 
   useEffect(() => {
     mountedRef.current = true;
 
-    getOrBootWebContainer()
+    // Agar pehle se instance hai toh naya boot mat karo
+    if (wcRef.current) {
+      setInstance(wcRef.current);
+      setIsLoading(false);
+      return;
+    }
+
+    WebContainer.boot()
       .then((wc) => {
-        if (!mountedRef.current) return;
+        if (!mountedRef.current) {
+          wc.teardown();
+          return;
+        }
+        wcRef.current = wc;
         setInstance(wc);
         setIsLoading(false);
       })
@@ -61,14 +49,14 @@ export const useWebContainer = ({
         console.error("Failed to initialize WebContainer:", err);
         if (!mountedRef.current) return;
         setError(
-          err instanceof Error ? err.message : "Failed to initialize WebContainer"
+          err instanceof Error
+            ? err.message
+            : "Failed to initialize WebContainer"
         );
         setIsLoading(false);
       });
 
     return () => {
-      // Do NOT teardown here — the singleton must survive re-renders.
-      // Only mark as unmounted so stale setState calls are ignored.
       mountedRef.current = false;
     };
   }, []);
@@ -87,7 +75,6 @@ export const useWebContainer = ({
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to write file";
-        console.error(`Failed to write file at ${path}:`, err);
         throw new Error(`Failed to write file at ${path}: ${errorMessage}`);
       }
     },
@@ -95,10 +82,9 @@ export const useWebContainer = ({
   );
 
   const destroy = useCallback(() => {
-    if (globalInstance) {
-      globalInstance.teardown();
-      globalInstance = null;
-      bootPromise = null;
+    if (wcRef.current) {
+      wcRef.current.teardown();
+      wcRef.current = null;
     }
     setInstance(null);
     setServerUrl(null);
